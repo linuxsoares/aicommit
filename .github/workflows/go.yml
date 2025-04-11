@@ -23,7 +23,7 @@ jobs:
       - name: Build binary
         run: |
           mkdir -p dist
-          go build -o dist/aicommit ./cmd/aicommit  # ajuste se o entrypoint for diferente
+          go build -o dist/aicommit .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
