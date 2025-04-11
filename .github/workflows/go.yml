@@ -2,9 +2,8 @@ name: Release aicommit
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    tags:
+      - "v*" # qualquer versão tipo v1.0.0
 
 jobs:
   build:
