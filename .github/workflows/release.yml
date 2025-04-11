@@ -41,7 +41,7 @@ jobs:
 
           git tag "$NEW_TAG"
 
-          # 💡 Usa o token pessoal no push
+          # Usa PERSONAL_TOKEN para push com permissão
           git remote set-url origin https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/${{ github.repository }}
           git push origin "$NEW_TAG"
 
@@ -50,7 +50,7 @@ jobs:
           mkdir -p dist
           go build -o dist/aicommit .
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.bump_tag.outputs.new_tag }}
