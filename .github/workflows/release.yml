@@ -30,6 +30,8 @@ jobs:
 
       - name: Bump version and tag
         id: bump_tag
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
         run: |
           OLD_TAG=${{ steps.get_tag.outputs.tag }}
           VERSION=${OLD_TAG#v}
@@ -41,8 +43,8 @@ jobs:
 
           git tag "$NEW_TAG"
 
-          # Usa PERSONAL_TOKEN para push com permissão
-          git remote set-url origin https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/${{ github.repository }}
+          # ✅ Token visível só aqui via env (sem mascarar)
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
           git push origin "$NEW_TAG"
 
       - name: Build binary
