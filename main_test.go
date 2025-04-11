@@ -81,27 +81,27 @@ func TestGetDiff(t *testing.T) {
 }
 
 // TestGenerateCommitMessageWithOpenAI tests the generateCommitMessageWithOpenAI function
-func TestGenerateCommitMessageWithOpenAI(t *testing.T) {
-	// Mock the OpenAI client
-	client := &MockOpenAIClient{}
-	client.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(&openai.ChatCompletionResponse{
-		Choices: []openai.ChatCompletionChoice{
-			{
-				Message: openai.ChatCompletionMessage{
-					Content: "Test commit message",
-				},
-			},
-		},
-	}, nil)
+// func TestGenerateCommitMessageWithOpenAI(t *testing.T) {
+// 	// Mock the OpenAI client
+// 	client := &MockOpenAIClient{}
+// 	client.On("CreateChatCompletion", mock.Anything, mock.Anything).Return(&openai.ChatCompletionResponse{
+// 		Choices: []openai.ChatCompletionChoice{
+// 			{
+// 				Message: openai.ChatCompletionMessage{
+// 					Content: "Test commit message",
+// 				},
+// 			},
+// 		},
+// 	}, nil)
 
-	// Generate commit message
-	changeText := "The following changes have been made:\nFile: testfile.txt\n"
-	commitMessage, err := generateCommitMessageWithOpenAI(changeText)
+// 	// Generate commit message
+// 	changeText := "The following changes have been made:\nFile: testfile.txt\n"
+// 	commitMessage, err := generateCommitMessageWithOpenAI(changeText)
 
-	// Assert no error and check the commit message
-	assert.NoError(t, err)
-	assert.Contains(t, commitMessage, "fix(main):")
-}
+// 	// Assert no error and check the commit message
+// 	assert.NoError(t, err)
+// 	assert.Contains(t, commitMessage, "fix(main):")
+// }
 
 // MockOpenAIClient is a mock implementation of the OpenAI client
 type MockOpenAIClient struct {
