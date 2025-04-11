@@ -10,38 +10,11 @@ import (
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	configprompt "github.com/linuxsoares/aicommand/configPrompt"
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/tcnksm/go-gitconfig"
 )
-
-const systemPrompt = `You is a senior software enginner, and need to generate a better commit message using semantic commit message, according this text below:
-
-Semantic Commit Messages
-See how a minor change to your commit message style can make you a better programmer.
-
-Format: <type>(<scope>): <subject>
-
-<scope> is optional
-
-Example
-feat: add hat wobble
-^--^  ^------------^
-|     |
-|     +-> Summary in present tense.
-|
-+-------> Type: chore, docs, feat, fix, refactor, style, or test.
-More Examples:
-
-feat: (new feature for the user, not a new feature for build script)
-fix: (bug fix for the user, not a fix to a build script)
-docs: (changes to the documentation)
-style: (formatting, missing semi colons, etc; no production code change)
-refactor: (refactoring production code, eg. renaming a variable)
-test: (adding missing tests, refactoring tests; no production code change)
-chore: (updating grunt tasks etc; no production code change)
-
-Show in result only a commit message.`
 
 func main() {
 	// Open the current repository
@@ -169,10 +142,10 @@ func getDiff(repo *git.Repository, file string) (string, error) {
 }
 
 func generateCommitMessageWithOpenAI(changeText string) (string, error) {
-	client := openai.NewClient("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")
+	client := openai.NewClient(AICOMMAND_OPEN_AI_TOKEN)
 	ctx := context.Background()
 
-	prompt := fmt.Sprintf("We have files that were changed in this project, I would like you to take these changed files, and make a friendly, simple, summarized and well-described commit message, using Semantic Commit Messages.:\n%s", changeText)
+	prompt := fmt.Sprintf(configprompt.UserPrompt, changeText)
 	req := openai.ChatCompletionRequest{
 		Model: openai.GPT4o,
 		Messages: []openai.ChatCompletionMessage{
@@ -182,10 +155,10 @@ func generateCommitMessageWithOpenAI(changeText string) (string, error) {
 			},
 			{
 				Role:    openai.ChatMessageRoleSystem,
-				Content: systemPrompt,
+				Content: configprompt.SystemPrompt,
 			},
 		},
-		MaxTokens: 100,
+		MaxTokens: 1000,
 	}
 
 	resp, err := client.CreateChatCompletion(ctx, req)
