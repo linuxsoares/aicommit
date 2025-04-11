@@ -28,6 +28,12 @@ jobs:
           TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
+      - name: Test authenticated access
+        run: |
+          git ls-remote https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+
       - name: Bump version and tag
         id: bump_tag
         env:
