@@ -16,7 +16,7 @@ import (
 	"github.com/tcnksm/go-gitconfig"
 )
 
-const maxDiffSize = 500
+const maxDiffSize = 1000
 
 func main() {
 	// Open the current repository
