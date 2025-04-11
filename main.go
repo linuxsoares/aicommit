@@ -12,6 +12,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/tcnksm/go-gitconfig"
 )
 
 const systemPrompt = `You is a senior software enginner, and need to generate a better commit message using semantic commit message, according this text below:
@@ -196,8 +197,19 @@ func generateCommitMessageWithOpenAI(changeText string) (string, error) {
 }
 
 func commitChanges(w *git.Worktree, message string) {
+	// Get author information from git config
+	authorName, err := gitconfig.Username()
+	if err != nil {
+		log.Fatalf("Could not get author name from git config: %v", err)
+	}
+
+	authorEmail, err := gitconfig.Email()
+	if err != nil {
+		log.Fatalf("Could not get author email from git config: %v", err)
+	}
+
 	// Add all changes
-	_, err := w.Add(".")
+	_, err = w.Add(".")
 	if err != nil {
 		log.Fatalf("Could not add changes: %v", err)
 	}
@@ -205,8 +217,8 @@ func commitChanges(w *git.Worktree, message string) {
 	// Commit the changes
 	commit, err := w.Commit(message, &git.CommitOptions{
 		Author: &object.Signature{
-			Name:  "Your Name",
-			Email: "your.email@example.com",
+			Name:  authorName,
+			Email: authorEmail,
 			When:  time.Now(),
 		},
 	})
