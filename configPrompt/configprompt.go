@@ -1,31 +1,14 @@
 package configprompt
 
-const SystemPrompt = `You is a senior software enginner, and need to generate a better commit message using semantic commit message, according this text below:
+const SystemPrompt = `You are a senior software engineer. Generate a commit message using semantic commit message format based on the summary below.
 
-Semantic Commit Messages
-See how a minor change to your commit message style can make you a better programmer.
+Use the format: <type>(<scope>): <subject>
 
-Format: <type>(<scope>): <subject>
+Only return the commit message, no explanations.`
 
-<scope> is optional
+const UserPrompt = `Here is the summary of changes:
 
-Example
-feat: add hat wobble
-^--^  ^------------^
-|     |
-|     +-> Summary in present tense.
-|
-+-------> Type: chore, docs, feat, fix, refactor, style, or test.
-More Examples:
+main.go | 2 +-
+1 file changed, 1 insertion(+), 1 deletion(-)
 
-feat: (new feature for the user, not a new feature for build script)
-fix: (bug fix for the user, not a fix to a build script)
-docs: (changes to the documentation)
-style: (formatting, missing semi colons, etc; no production code change)
-refactor: (refactoring production code, eg. renaming a variable)
-test: (adding missing tests, refactoring tests; no production code change)
-chore: (updating grunt tasks etc; no production code change)
-
-Show in result only a commit message.`
-
-const UserPrompt = `We have files that were changed in this project, I would like you to take these changed files, and make a friendly, simple, summarized and well-described commit message, using Semantic Commit Messages.:\n%s`
+Generate a concise, clear, and well-written commit message using Semantic Commit Messages.`

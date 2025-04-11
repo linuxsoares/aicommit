@@ -16,6 +16,8 @@ import (
 	"github.com/tcnksm/go-gitconfig"
 )
 
+const maxDiffSize = 500
+
 func main() {
 	// Open the current repository
 	repo, err := git.PlainOpen(".")
@@ -138,6 +140,9 @@ func getDiff(repo *git.Repository, file string) (string, error) {
 	}
 	patch := dmp.DiffPrettyText(diffs)
 
+	if len(patch) > maxDiffSize {
+		patch = patch[:maxDiffSize] + "\n...diff truncated...\n"
+	}
 	return patch, nil
 }
 
@@ -147,7 +152,7 @@ func generateCommitMessageWithOpenAI(changeText string) (string, error) {
 
 	prompt := fmt.Sprintf(configprompt.UserPrompt, changeText)
 	req := openai.ChatCompletionRequest{
-		Model: openai.GPT4o,
+		Model: openai.GPT4Turbo,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleUser,
