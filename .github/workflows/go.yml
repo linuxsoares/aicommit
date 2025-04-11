@@ -2,8 +2,9 @@ name: Release aicommit
 
 on:
   push:
-    tags:
-      - "v*" # Executa quando você fizer git push v1.0.0, v2.0.0 etc.
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
   build:
