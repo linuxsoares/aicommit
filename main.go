@@ -1,14 +1,46 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"log"
 	"strings"
 	"time"
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	openai "github.com/sashabaranov/go-openai"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
+
+const systemPrompt = `You is a senior software enginner, and need to generate a better commit message using semantic commit message, according this text below:
+
+Semantic Commit Messages
+See how a minor change to your commit message style can make you a better programmer.
+
+Format: <type>(<scope>): <subject>
+
+<scope> is optional
+
+Example
+feat: add hat wobble
+^--^  ^------------^
+|     |
+|     +-> Summary in present tense.
+|
++-------> Type: chore, docs, feat, fix, refactor, style, or test.
+More Examples:
+
+feat: (new feature for the user, not a new feature for build script)
+fix: (bug fix for the user, not a fix to a build script)
+docs: (changes to the documentation)
+style: (formatting, missing semi colons, etc; no production code change)
+refactor: (refactoring production code, eg. renaming a variable)
+test: (adding missing tests, refactoring tests; no production code change)
+chore: (updating grunt tasks etc; no production code change)
+
+Show in result only a commit message.`
 
 func main() {
 	// Open the current repository
@@ -31,30 +63,136 @@ func main() {
 
 	// Generate a list of changed files
 	var changedFiles []string
-	for file, _ := range status {
+	for file := range status {
 		changedFiles = append(changedFiles, file)
 	}
 
 	// Generate a text about the changes
-	changeText := generateChangeText(changedFiles)
-	fmt.Println("Changes detected:")
-	fmt.Println(changeText)
+	changeText, err := generateChangeText(repo, changedFiles)
+	if err != nil {
+		log.Fatalf("Could not generate change text: %v", err)
+	}
 
-	// Create a simple commit message
-	commitMessage := generateCommitMessage(changedFiles)
-	fmt.Println("Commit message:")
+	// Generate a commit message using OpenAI
+	commitMessage, err := generateCommitMessageWithOpenAI(changeText)
+	if err != nil {
+		log.Fatalf("Could not generate commit message: %v", err)
+	}
+	fmt.Println("Generated commit message:")
 	fmt.Println(commitMessage)
 
-	// Commit the changes
-	commitChanges(w, commitMessage)
+	// Ask the user if the commit message is okay
+	var userResponse string
+	fmt.Println("Is this commit message okay? (yes/no)")
+	fmt.Scanln(&userResponse)
+
+	if strings.ToLower(userResponse) == "yes" {
+		// Commit the changes
+		commitChanges(w, commitMessage)
+	} else {
+		fmt.Println("Commit aborted by user.")
+	}
 }
 
-func generateChangeText(files []string) string {
-	return fmt.Sprintf("The following files have been changed:\n%s", strings.Join(files, "\n"))
+func generateChangeText(repo *git.Repository, files []string) (string, error) {
+	var changeText strings.Builder
+	changeText.WriteString("The following changes have been made:\n")
+
+	for _, file := range files {
+		changeText.WriteString(fmt.Sprintf("File: %s\n", file))
+
+		// Get the diff for the file
+		patch, err := getDiff(repo, file)
+		if err != nil {
+			return "", err
+		}
+
+		changeText.WriteString(patch)
+		changeText.WriteString("\n")
+	}
+
+	return changeText.String(), nil
 }
 
-func generateCommitMessage(files []string) string {
-	return fmt.Sprintf("Updated %d files", len(files))
+func getDiff(repo *git.Repository, file string) (string, error) {
+	// Get the HEAD reference
+	headRef, err := repo.Head()
+	if err != nil {
+		return "", err
+	}
+
+	// Get the commit object for the HEAD reference
+	headCommit, err := repo.CommitObject(headRef.Hash())
+	if err != nil {
+		return "", err
+	}
+
+	// Get the file content at HEAD
+	headFile, err := headCommit.File(file)
+	var headContent string
+	if err == nil {
+		headContent, err = headFile.Contents()
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// Get the current file content
+	currentFile, err := repo.Worktree()
+	if err != nil {
+		return "", err
+	}
+
+	currentFileContent, err := currentFile.Filesystem.Open(file)
+	if err != nil {
+		return "", err
+	}
+	defer currentFileContent.Close()
+
+	currentContent, err := io.ReadAll(currentFileContent)
+	if err != nil {
+		return "", err
+	}
+
+	// Generate the diff
+	dmp := diffmatchpatch.New()
+	var diffs []diffmatchpatch.Diff
+	if headContent == "" {
+		diffs = dmp.DiffMain("", string(currentContent), false)
+	} else {
+		diffs = dmp.DiffMain(headContent, string(currentContent), false)
+	}
+	patch := dmp.DiffPrettyText(diffs)
+
+	return patch, nil
+}
+
+func generateCommitMessageWithOpenAI(changeText string) (string, error) {
+	client := openai.NewClient("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")
+	ctx := context.Background()
+
+	prompt := fmt.Sprintf("We have files that were changed in this project, I would like you to take these changed files, and make a friendly, simple, summarized and well-described commit message, using Semantic Commit Messages.:\n%s", changeText)
+	req := openai.ChatCompletionRequest{
+		Model: openai.GPT4o,
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleUser,
+				Content: prompt,
+			},
+			{
+				Role:    openai.ChatMessageRoleSystem,
+				Content: systemPrompt,
+			},
+		},
+		MaxTokens: 100,
+	}
+
+	resp, err := client.CreateChatCompletion(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(resp.Choices[0].Message.Content), nil
 }
 
 func commitChanges(w *git.Worktree, message string) {
