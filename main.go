@@ -16,8 +16,6 @@ import (
 	"github.com/tcnksm/go-gitconfig"
 )
 
-const maxDiffSize = 1000
-
 func main() {
 	// Open the current repository
 	repo, err := git.PlainOpen(".")
@@ -140,8 +138,8 @@ func getDiff(repo *git.Repository, file string) (string, error) {
 	}
 	patch := dmp.DiffPrettyText(diffs)
 
-	if len(patch) > maxDiffSize {
-		patch = patch[:maxDiffSize] + "\n...diff truncated...\n"
+	if len(patch) > MAXDIFFSIZE {
+		patch = patch[:MAXDIFFSIZE] + "\n...diff truncated...\n"
 	}
 	return patch, nil
 }
