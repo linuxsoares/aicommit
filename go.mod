@@ -1,6 +1,6 @@
 module github.com/linuxsoares/aicommand
 
-go 1.23.4
+go 1.23
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
