@@ -1,41 +1,33 @@
-name: Auto Tag and Release
+name: Release aicommit
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
-  auto-tag:
+  build:
+    name: Build and Release
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Git
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23"
+
+      - name: Build binary
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          mkdir -p dist
+          go build -o dist/aicommit .
 
-      - name: Get latest tag
-        id: get_tag
-        run: |
-          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Latest tag: $TAG"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
-      - name: Bump version and create new tag
-        id: bump_tag
-        run: |
-          OLD_TAG=${{ steps.get_tag.outputs.tag }}
-          echo "Old tag: $OLD_TAG"
-
-          VERSION=${OLD_TAG#v}
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          PATCH=$((PATCH + 1))
-          NEW_TAG="v$MAJOR.$MINOR.$PATCH"
-
-          echo "New tag: $NEW_TAG"
-          git tag "$NEW_TAG"
-          git push origin "$NEW_TAG"
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/aicommit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
