@@ -148,7 +148,7 @@ func generateCommitMessageWithOpenAI(changeText string) (string, error) {
 	client := openai.NewClient(AICOMMAND_OPEN_AI_TOKEN)
 	ctx := context.Background()
 
-	prompt := fmt.Sprintf(configprompt.UserPrompt, changeText)
+	prompt := configprompt.UserPrompt + changeText
 	req := openai.ChatCompletionRequest{
 		Model: openai.GPT4Turbo,
 		Messages: []openai.ChatCompletionMessage{
